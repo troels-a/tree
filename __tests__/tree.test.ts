@@ -173,15 +173,15 @@ describe("indentNode", () => {
 });
 
 describe("outdentNode", () => {
-  it("moves the node up to its grandparent, just above its old parent", () => {
+  it("moves the node up to its grandparent, just after its old parent", () => {
     const state = sampleState();
-    // outdent "index" -> from "src" up to "root", placed right before "src"
+    // outdent "index" -> from "src" up to "root", placed right after "src"
     const next = outdentNode(state, "index");
     const index = next.nodes.find((n) => n.id === "index")!;
     expect(index.parentId).toBe("root");
     expect(getChildren(next.nodes, "root").map((n) => n.id)).toEqual([
-      "index",
       "src",
+      "index",
       "pkg",
       "readme",
     ]);
