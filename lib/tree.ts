@@ -79,18 +79,17 @@ function normalizeOrders(nodes: TreeNode[], parentId: NodeId | null): TreeNode[]
 
 /**
  * Inserts a new node under `parentId`. If the currently selected node is a
- * child of `parentId`, the new node is placed directly after it; otherwise it
- * is appended to the end. The new node becomes selected.
+ * child of `parentId`, the new node is placed directly after it (sibling
+ * insert); otherwise it is placed at the top of `parentId`'s children, so a
+ * subnode added inside a directory appears first. The new node becomes
+ * selected.
  */
 export function addNode(state: TreeState, parentId: NodeId | null): TreeState {
   const id = generateId();
-  const siblings = getChildren(state.nodes, parentId);
   const selected = state.nodes.find((n) => n.id === state.selectedId);
 
   const insertOrder =
-    selected && selected.parentId === parentId
-      ? selected.order + 1
-      : siblings.length;
+    selected && selected.parentId === parentId ? selected.order + 1 : 0;
 
   const shifted = state.nodes.map((n) =>
     n.parentId === parentId && n.order >= insertOrder

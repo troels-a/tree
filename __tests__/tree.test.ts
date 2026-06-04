@@ -79,13 +79,20 @@ describe("getVisualOrder", () => {
 });
 
 describe("addNode", () => {
-  it("appends to root when nothing is selected", () => {
+  it("inserts at the top when there is no selected sibling", () => {
     const state = sampleState(null);
     const next = addNode(state, null);
     const roots = getChildren(next.nodes, null);
-    // existing root "my-project" plus the new node, appended last
-    expect(roots[roots.length - 1].id).toBe(next.selectedId);
+    // new node goes to the top, ahead of the existing "my-project"
+    expect(roots[0].id).toBe(next.selectedId);
     expect(roots).toHaveLength(2);
+  });
+
+  it("inserts a new child at the top of the directory's existing children", () => {
+    const state = sampleState("src"); // src already contains "index"
+    const next = addNode(state, "src");
+    const children = getChildren(next.nodes, "src");
+    expect(children.map((n) => n.id)).toEqual([next.selectedId, "index"]);
   });
 
   it("inserts a new node directly after the selected sibling at the same depth", () => {

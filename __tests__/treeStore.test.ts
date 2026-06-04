@@ -56,6 +56,15 @@ describe("'add' (right arrow) creates a child inside the selected node", () => {
     expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("pkg");
   });
 
+  it("places the new child at the top of an existing child list", () => {
+    const s = reducer(store("src"), { type: "add" }); // src already has "index"
+    const newId = s.editingId!;
+    expect(getChildren(s.present.nodes, "src").map((n) => n.id)).toEqual([
+      newId,
+      "index",
+    ]);
+  });
+
   it("does nothing when no node is selected", () => {
     const s = reducer(store(null), { type: "add" });
     expect(s.present.nodes).toHaveLength(5);
