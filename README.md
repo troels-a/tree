@@ -27,11 +27,11 @@ my-project/
 | `→` | Go into the first child |
 | `←` | Go out to the parent; discards a just-created unnamed node |
 | `Space` | Add a sibling |
-| `⌘`/`Ctrl` + `Space` | Add a child |
+| `⇧Space` | Add a child |
 | `Enter` | Rename the selected node |
 | `Delete` / `Backspace` | Remove the selected node (the root is protected) |
 | `Tab` / `⇧Tab` | Indent / outdent |
-| hold `⌘`/`Ctrl` + `↑`/`↓` | Move the selected node up/down the whole tree |
+| hold `⇧` + `↑`/`↓` | Move the selected node up/down the whole tree |
 | `⌘`/`Ctrl` + `C` | Copy the rendered tree |
 | `⌘`/`Ctrl` + `Z` / `⇧Z` | Undo / redo |
 

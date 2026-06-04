@@ -125,11 +125,11 @@ describe("TreeApp", () => {
     });
   });
 
-  describe("move node with modifier + arrows", () => {
-    it("Ctrl/Cmd+ArrowDown moves the selected node down among its siblings", () => {
+  describe("move node with Shift + arrows", () => {
+    it("Shift+ArrowDown moves the selected node down the tree", () => {
       render(<TreeApp />);
       fireEvent.keyDown(document.body, { key: "ArrowDown" }); // select src
-      fireEvent.keyDown(document.body, { key: "ArrowDown", ctrlKey: true }); // move src down
+      fireEvent.keyDown(document.body, { key: "ArrowDown", shiftKey: true }); // move src down
       const rows = getRows().map((r) => r.textContent ?? "");
       // order under root is now package.json, then src
       expect(rows[1]).toContain("package.json");
@@ -165,10 +165,10 @@ describe("TreeApp", () => {
       ).toContain("src");
     });
 
-    it("modifier + Space creates a child (nests)", () => {
+    it("Shift+Space creates a child (nests)", () => {
       render(<TreeApp />); // root selected
       const before = getRows().length;
-      fireEvent.keyDown(document.body, { key: " ", metaKey: true });
+      fireEvent.keyDown(document.body, { key: " ", shiftKey: true });
       expect(getRows().length).toBe(before + 1);
       expect(screen.getByRole("textbox")).toBeInTheDocument(); // editing the new node
     });

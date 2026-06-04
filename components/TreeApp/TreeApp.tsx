@@ -38,17 +38,6 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
     (): AppState => initStore(createDefaultState())
   );
   const [copied, setCopied] = useState(false);
-  // Shown in the hint line; resolved after mount to avoid hydration mismatch.
-  const [moveModifier, setMoveModifier] = useState("⌘");
-
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } })
-        .userAgentData?.platform ?? navigator.platform;
-    const isMac = /Mac/i.test(platform) || (/Mac/i.test(ua) && !/Windows/i.test(ua));
-    setMoveModifier(isMac ? "⌘" : "Ctrl");
-  }, []);
 
   // Keep a live snapshot for the window listener and the copy handler.
   const stateRef = useRef(state);
@@ -121,11 +110,11 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          dispatch({ type: mod ? "moveDown" : "selectNext" });
+          dispatch({ type: e.shiftKey ? "moveDown" : "selectNext" });
           break;
         case "ArrowUp":
           e.preventDefault();
-          dispatch({ type: mod ? "moveUp" : "selectPrev" });
+          dispatch({ type: e.shiftKey ? "moveUp" : "selectPrev" });
           break;
         case "ArrowRight":
           e.preventDefault();
@@ -137,7 +126,7 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
           break;
         case " ":
           e.preventDefault();
-          dispatch({ type: mod ? "addChild" : "addSibling" });
+          dispatch({ type: e.shiftKey ? "addChild" : "addSibling" });
           break;
         case "Delete":
         case "Backspace":
@@ -177,9 +166,9 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
         <p className={styles.description}>
           Build ASCII directory structures quickly.
           <br />
-          ↑/↓ to move · → in · ← out · Space to add a sibling · {moveModifier}
-          +Space to add a child · Enter to rename · Delete to remove ·{" "}
-          {moveModifier} + ↑/↓ to move the node.
+          Arrows to move · Space to add a sibling · Shift+Space to add a child
+          · Enter to rename · Delete to remove · hold Shift + ↑/↓ to move the
+          node.
         </p>
       </header>
 
