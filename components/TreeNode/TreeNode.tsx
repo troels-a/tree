@@ -9,6 +9,8 @@ interface TreeNodeProps {
   prefix: string;
   selected: boolean;
   editing: boolean;
+  /** True while this node is being edited and was only just created. */
+  isNew: boolean;
   hasChildren: boolean;
   onSelect: (id: NodeId) => void;
   onRename: (id: NodeId, name: string) => void;
@@ -24,6 +26,7 @@ export default function TreeNode({
   prefix,
   selected,
   editing,
+  isNew,
   hasChildren,
   onSelect,
   onRename,
@@ -82,6 +85,11 @@ export default function TreeNode({
               e.preventDefault();
               onFinishEdit();
             } else if (e.key === "Escape") {
+              e.preventDefault();
+              onCancelEdit();
+            } else if (e.key === "ArrowLeft" && isNew && node.name === "") {
+              // Backing out of a just-created, still-unnamed node discards it
+              // (cancelEdit aborts a new node and reselects its parent).
               e.preventDefault();
               onCancelEdit();
             }

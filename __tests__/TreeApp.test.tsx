@@ -164,6 +164,36 @@ describe("TreeApp", () => {
       const selected = screen.getByRole("treeitem", { selected: true });
       expect(selected.textContent).toContain("src");
     });
+
+    it("ArrowLeft on a freshly-created, unnamed node discards it", () => {
+      render(<TreeApp />);
+      const before = getRows().length;
+      fireEvent.keyDown(document.body, { key: " " }); // create empty child, editing
+      expect(getRows().length).toBe(before + 1);
+
+      fireEvent.keyDown(screen.getByRole("textbox"), { key: "ArrowLeft" });
+      expect(screen.queryByRole("textbox")).not.toBeInTheDocument(); // edit ended
+      expect(getRows().length).toBe(before); // the empty node is gone
+    });
+
+    it("ArrowLeft keeps a new node that already has a name (cursor movement)", () => {
+      render(<TreeApp />);
+      const before = getRows().length;
+      fireEvent.keyDown(document.body, { key: " " });
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "abc" } });
+
+      fireEvent.keyDown(screen.getByRole("textbox"), { key: "ArrowLeft" });
+      expect(screen.getByRole("textbox")).toBeInTheDocument(); // still editing
+      expect(getRows().length).toBe(before + 1);
+    });
+
+    it("ArrowLeft while renaming an existing node does not discard it", () => {
+      render(<TreeApp />); // root is selected and is an existing, named node
+      fireEvent.keyDown(document.body, { key: "Enter" }); // rename root
+      const input = screen.getByRole("textbox");
+      fireEvent.keyDown(input, { key: "ArrowLeft" });
+      expect(screen.getByRole("textbox")).toBeInTheDocument(); // still editing, not aborted
+    });
   });
 
   describe("undo / redo", () => {

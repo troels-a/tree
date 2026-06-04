@@ -186,6 +186,7 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
         <TreeEditor
           state={state.present}
           editingId={state.editingId}
+          editingIsNew={state.editIsNew}
           dispatch={dispatch}
         />
       </section>

@@ -10,12 +10,14 @@ import styles from "./TreeEditor.module.css";
 interface TreeEditorProps {
   state: TreeState;
   editingId: NodeId | null;
+  editingIsNew: boolean;
   dispatch: Dispatch<Action>;
 }
 
 export default function TreeEditor({
   state,
   editingId,
+  editingIsNew,
   dispatch,
 }: TreeEditorProps) {
   const draggedId = useRef<NodeId | null>(null);
@@ -67,6 +69,7 @@ export default function TreeEditor({
           prefix={prefixes.get(node.id) ?? ""}
           selected={node.id === state.selectedId}
           editing={node.id === editingId}
+          isNew={node.id === editingId && editingIsNew}
           hasChildren={(childCount.get(node.id) ?? 0) > 0}
           onSelect={(id) => dispatch({ type: "select", id })}
           onRename={(id, name) => dispatch({ type: "renameLive", id, name })}
