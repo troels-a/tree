@@ -191,8 +191,15 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <span className={styles.continuousMark} aria-hidden="true" />A
-        Continuous product
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className={styles.continuousMark}
+          src="/continuous.png"
+          alt=""
+          width={16}
+          height={16}
+        />
+        A Continuous product :)
       </a>
     </main>
   );
