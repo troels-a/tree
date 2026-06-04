@@ -94,6 +94,14 @@ describe("TreeApp", () => {
     expect(copied).toContain("└── README.md");
   });
 
+  it("clears the tree to its root when Clear is clicked", () => {
+    render(<TreeApp />);
+    expect(getRows().length).toBe(5);
+    fireEvent.click(screen.getByRole("button", { name: /clear/i }));
+    expect(getRows().length).toBe(1);
+    expect(screen.getByText("my-project")).toBeInTheDocument();
+  });
+
   describe("global keyboard", () => {
     it("handles keys fired anywhere on the document, not just the editor", () => {
       render(<TreeApp />);
@@ -146,12 +154,12 @@ describe("TreeApp", () => {
       expect(selected.textContent).toContain("index.ts");
     });
 
-    it("ArrowRight creates a child inside the selected node and edits it", () => {
+    it("ArrowRight no longer creates a node", () => {
       render(<TreeApp />); // root selected
       const before = getRows().length;
       fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(getRows().length).toBe(before + 1);
-      expect(screen.getByRole("textbox")).toBeInTheDocument(); // new node is editing
+      expect(getRows().length).toBe(before); // nothing added
+      expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     });
 
     it("ArrowLeft selects the parent", () => {

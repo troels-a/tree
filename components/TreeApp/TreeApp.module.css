@@ -63,5 +63,9 @@
 
 .actions {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  width: 420px;
+  max-width: 100%;
+  box-sizing: border-box;
 }

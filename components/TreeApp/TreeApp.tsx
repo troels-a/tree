@@ -6,6 +6,7 @@ import { reducer, initStore, AppState } from "@/lib/treeStore";
 import { renderTree } from "@/lib/render";
 import TreeEditor from "../TreeEditor/TreeEditor";
 import CopyButton from "../CopyButton/CopyButton";
+import ClearButton from "../ClearButton/ClearButton";
 import styles from "./TreeApp.module.css";
 
 interface TreeAppProps {
@@ -126,10 +127,6 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
           e.preventDefault();
           dispatch({ type: mod ? "moveUp" : "selectPrev" });
           break;
-        case "ArrowRight":
-          e.preventDefault();
-          dispatch({ type: "add" });
-          break;
         case "ArrowLeft":
           e.preventDefault();
           dispatch({ type: "ascend" });
@@ -176,9 +173,8 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
         <p className={styles.description}>
           Build ASCII directory structures quickly.
           <br />
-          ↑/↓ to move through the tree · → to add a child · Space to add
-          (beside a file, inside a folder) · ← to go out · Delete to remove ·
-          Enter to rename · hold {moveModifier} + ↑/↓ to reorder.
+          ↑/↓ to move · Space to add · ← to go out · Enter to rename · Delete
+          to remove · hold {moveModifier} + ↑/↓ to reorder.
         </p>
       </header>
 
@@ -192,6 +188,7 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
       </section>
 
       <div className={styles.actions}>
+        <ClearButton onClear={() => dispatch({ type: "clear" })} />
         <CopyButton copied={copied} onCopy={handleCopy} />
       </div>
 

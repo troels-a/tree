@@ -37,8 +37,8 @@ export type Action =
   | { type: "selectNext" }
   | { type: "selectPrev" }
   | { type: "ascend" }
-  | { type: "add" }
   | { type: "addContextual" }
+  | { type: "clear" }
   | { type: "remove" }
   | { type: "removeId"; id: NodeId }
   | { type: "indent" }
@@ -115,15 +115,6 @@ export function reducer(state: AppState, action: Action): AppState {
     case "ascend":
       return transient(state, selectParent(state.present));
 
-    case "add": {
-      // Right arrow: create a new child *inside* the selected node.
-      const selected = state.present.nodes.find(
-        (n) => n.id === state.present.selectedId
-      );
-      if (!selected) return state;
-      return beginNewNode(state, selected.id);
-    }
-
     case "addContextual": {
       // Space: a file (dotted name) gets a sibling beside it; a folder gets a
       // child inside it. A sibling of the root would be a second top-level
@@ -135,6 +126,14 @@ export function reducer(state: AppState, action: Action): AppState {
       const addSibling = isFileName(selected.name) && selected.parentId !== null;
       const parentId = addSibling ? selected.parentId : selected.id;
       return beginNewNode(state, parentId);
+    }
+
+    case "clear": {
+      // Empty the tree back to its root(s); a tree must keep its top-level
+      // node, so only descendants are removed.
+      const roots = state.present.nodes.filter((n) => n.parentId === null);
+      if (roots.length === state.present.nodes.length) return state; // already empty
+      return commit(state, { nodes: roots, selectedId: roots[0]?.id ?? null });
     }
 
     case "remove":

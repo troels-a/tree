@@ -14,6 +14,7 @@ my-project/
 
 - Visual, keyboard-driven tree editor that renders live `├──`/`└──` connectors
 - One-click (or `⌘/Ctrl+C`) copy of the rendered ASCII tree
+- Clear button to reset the tree to an empty root
 - Drag-and-drop reordering (hold `Alt` while dropping to nest)
 - Undo / redo (`⌘/Ctrl+Z`, `⌘/Ctrl+Shift+Z`)
 - State persisted to `localStorage`
@@ -22,8 +23,9 @@ my-project/
 
 | Key | Action |
 | --- | --- |
-| `↑` / `↓` | Move selection |
-| `Space` | Add a node after the selection |
+| `↑` / `↓` | Move selection through the tree |
+| `Space` | Add a node — sibling of a file, child of a folder |
+| `←` | Go out to the parent; discards a just-created unnamed node |
 | `Enter` | Rename the selected node |
 | `Delete` / `Backspace` | Remove the selected node (the root is protected) |
 | `Tab` / `⇧Tab` | Indent / outdent |

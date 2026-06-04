@@ -40,43 +40,10 @@ describe("selection is not undoable", () => {
   });
 });
 
-describe("'add' (right arrow) creates a child inside the selected node", () => {
-  it("adds the new node as a child of the selected node (never a top-level sibling)", () => {
-    const s = reducer(store("root"), { type: "add" });
-    const newId = s.editingId!;
-    const child = s.present.nodes.find((n) => n.id === newId)!;
-    expect(child.parentId).toBe("root"); // inside root, not a sibling of root
-    // No new node ever ends up at the top level.
-    expect(getChildren(s.present.nodes, null)).toHaveLength(1);
-  });
-
-  it("adds a child of a non-root selected node too", () => {
-    const s = reducer(store("pkg"), { type: "add" });
-    const newId = s.editingId!;
-    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("pkg");
-  });
-
-  it("places the new child at the top of an existing child list", () => {
-    const s = reducer(store("src"), { type: "add" }); // src already has "index"
-    const newId = s.editingId!;
-    expect(getChildren(s.present.nodes, "src").map((n) => n.id)).toEqual([
-      newId,
-      "index",
-    ]);
-  });
-
-  it("does nothing when no node is selected", () => {
-    const s = reducer(store(null), { type: "add" });
-    expect(s.present.nodes).toHaveLength(5);
-    expect(s.past).toHaveLength(0);
-    expect(s.editingId).toBeNull();
-  });
-});
-
 describe("structural ops are undoable", () => {
-  it("'add' pushes history and undo restores the prior tree", () => {
+  it("'addContextual' pushes history and undo restores the prior tree", () => {
     const s0 = store();
-    const s1 = reducer(s0, { type: "add" });
+    const s1 = reducer(s0, { type: "addContextual" });
     expect(s1.present.nodes.length).toBe(6);
     expect(s1.past).toHaveLength(1);
 
@@ -161,7 +128,7 @@ describe("rename history", () => {
 describe("add-then-name is one undo step", () => {
   it("undo after add+rename removes the new node entirely", () => {
     let s = store("pkg");
-    s = reducer(s, { type: "add" }); // new child inside pkg, editing, isNew
+    s = reducer(s, { type: "addContextual" }); // new node, editing, isNew
     const newId = s.editingId!;
     expect(s.editIsNew).toBe(true);
     s = reducer(s, { type: "renameLive", id: newId, name: "LICENSE" });
@@ -175,7 +142,7 @@ describe("add-then-name is one undo step", () => {
 
   it("aborting a brand-new empty node leaves no trace and no dangling undo", () => {
     let s = store("pkg");
-    s = reducer(s, { type: "add" });
+    s = reducer(s, { type: "addContextual" });
     const newId = s.editingId!;
     s = reducer(s, { type: "cancelEdit" }); // empty -> abort
     expect(s.present.nodes.find((n) => n.id === newId)).toBeUndefined();
@@ -294,11 +261,16 @@ describe("addContextual (space): sibling on a file, child in a folder", () => {
     ]);
   });
 
-  it("creates a child when the selected node is a folder (no dot)", () => {
-    const s = reducer(store("src"), { type: "addContextual" }); // src is a folder
+  it("creates a child at the top when the selected node is a folder (no dot)", () => {
+    const s = reducer(store("src"), { type: "addContextual" }); // src has "index"
     const newId = s.editingId!;
     expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("src");
     expect(s.editIsNew).toBe(true);
+    // new child sits above the existing one
+    expect(getChildren(s.present.nodes, "src").map((n) => n.id)).toEqual([
+      newId,
+      "index",
+    ]);
   });
 
   it("creates a child when the (folder) root is selected", () => {
@@ -349,9 +321,36 @@ describe("ascend (left arrow): go back out to the parent", () => {
   });
 });
 
+describe("clear: wipe the tree back to an empty root", () => {
+  it("removes everything except the root and selects it", () => {
+    const s = reducer(store("index"), { type: "clear" });
+    expect(s.present.nodes).toHaveLength(1);
+    expect(s.present.nodes[0].id).toBe("root");
+    expect(s.present.nodes[0].name).toBe("my-project"); // root name preserved
+    expect(s.present.selectedId).toBe("root");
+  });
+
+  it("is undoable", () => {
+    const s = reducer(store(), { type: "clear" });
+    expect(s.past).toHaveLength(1);
+    const undone = reducer(s, { type: "undo" });
+    expect(undone.present.nodes).toHaveLength(5);
+  });
+
+  it("does nothing (no history) when the tree is already just a root", () => {
+    const only = initStore({
+      nodes: [{ id: "r", name: "x", parentId: null, order: 0 }],
+      selectedId: "r",
+    });
+    const s = reducer(only, { type: "clear" });
+    expect(s.past).toHaveLength(0);
+    expect(s.present.nodes).toHaveLength(1);
+  });
+});
+
 describe("load resets history", () => {
   it("'load' installs a fresh tree with empty history", () => {
-    let s = reducer(store(), { type: "add" });
+    let s = reducer(store(), { type: "addContextual" });
     s = reducer(s, { type: "load", tree: sampleTree("src") });
     expect(s.past).toEqual([]);
     expect(s.future).toEqual([]);
