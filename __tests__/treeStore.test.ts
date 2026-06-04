@@ -247,6 +247,55 @@ describe("move", () => {
   });
 });
 
+describe("descend (right arrow): go into a node", () => {
+  it("selects the first child when the node has children", () => {
+    const s = reducer(store("root"), { type: "descend" });
+    expect(s.present.selectedId).toBe("src");
+    expect(s.past).toHaveLength(0); // navigation only, not undoable
+    expect(s.editingId).toBeNull();
+  });
+
+  it("creates and edits a first child when the node is empty", () => {
+    const s = reducer(store("readme"), { type: "descend" }); // readme has no children
+    const newId = s.editingId!;
+    expect(newId).not.toBeNull();
+    expect(s.editIsNew).toBe(true);
+    const child = s.present.nodes.find((n) => n.id === newId)!;
+    expect(child.parentId).toBe("readme");
+    expect(s.present.selectedId).toBe(newId);
+    expect(s.past).toHaveLength(1); // add boundary
+  });
+
+  it("descend-create then abort leaves no trace", () => {
+    let s = reducer(store("readme"), { type: "descend" });
+    s = reducer(s, { type: "cancelEdit" });
+    expect(s.present.nodes).toHaveLength(5);
+    expect(s.past).toHaveLength(0);
+    expect(s.editingId).toBeNull();
+    expect(getChildren(s.present.nodes, "readme")).toHaveLength(0);
+  });
+
+  it("selects the first root when nothing is selected", () => {
+    const s = reducer(store(null), { type: "descend" });
+    expect(s.present.selectedId).toBe("root");
+    expect(s.past).toHaveLength(0);
+  });
+});
+
+describe("ascend (left arrow): go back out to the parent", () => {
+  it("selects the parent of the selected node", () => {
+    const s = reducer(store("index"), { type: "ascend" });
+    expect(s.present.selectedId).toBe("src");
+    expect(s.past).toHaveLength(0);
+  });
+
+  it("keeps selection at the root level", () => {
+    const s = reducer(store("root"), { type: "ascend" });
+    expect(s.present.selectedId).toBe("root");
+    expect(s.past).toHaveLength(0);
+  });
+});
+
 describe("load resets history", () => {
   it("'load' installs a fresh tree with empty history", () => {
     let s = reducer(store(), { type: "add" });

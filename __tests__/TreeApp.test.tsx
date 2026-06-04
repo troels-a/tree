@@ -137,6 +137,35 @@ describe("TreeApp", () => {
     });
   });
 
+  describe("descend / ascend with left and right arrows", () => {
+    it("ArrowRight steps into a folder that has children", () => {
+      render(<TreeApp />); // root "my-project" selected, has children
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      const selected = screen.getByRole("treeitem", { selected: true });
+      expect(selected.textContent).toContain("src");
+    });
+
+    it("ArrowRight on a childless node creates a child and opens it for editing", () => {
+      render(<TreeApp />);
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts (leaf)
+      const before = getRows().length;
+
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect(getRows().length).toBe(before + 1);
+      expect(screen.getByRole("textbox")).toBeInTheDocument(); // new node is editing
+    });
+
+    it("ArrowLeft selects the parent", () => {
+      render(<TreeApp />);
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts
+      fireEvent.keyDown(document.body, { key: "ArrowLeft" }); // back out to src
+      const selected = screen.getByRole("treeitem", { selected: true });
+      expect(selected.textContent).toContain("src");
+    });
+  });
+
   describe("undo / redo", () => {
     it("undoes and redoes a removal via the keyboard", () => {
       render(<TreeApp />);

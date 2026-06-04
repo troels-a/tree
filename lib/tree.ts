@@ -258,6 +258,14 @@ export function selectNext(state: TreeState): TreeState {
   return { ...state, selectedId: visual[nextIdx].id };
 }
 
+/** Selects the parent of the selected node. No-op at root or with no selection. */
+export function selectParent(state: TreeState): TreeState {
+  if (state.selectedId === null) return state;
+  const node = state.nodes.find((n) => n.id === state.selectedId);
+  if (!node || node.parentId === null) return state;
+  return { ...state, selectedId: node.parentId };
+}
+
 /** Moves selection up one row in visual order. */
 export function selectPrev(state: TreeState): TreeState {
   const visual = getVisualOrder(state.nodes);

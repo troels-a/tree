@@ -10,6 +10,8 @@ import {
   reorderSibling,
   selectNext,
   selectPrev,
+  selectParent,
+  getChildren,
 } from "./tree";
 
 /**
@@ -34,6 +36,8 @@ export type Action =
   | { type: "select"; id: NodeId | null }
   | { type: "selectNext" }
   | { type: "selectPrev" }
+  | { type: "descend" }
+  | { type: "ascend" }
   | { type: "add" }
   | { type: "remove" }
   | { type: "removeId"; id: NodeId }
@@ -94,6 +98,31 @@ export function reducer(state: AppState, action: Action): AppState {
       return transient(state, selectNext(state.present));
     case "selectPrev":
       return transient(state, selectPrev(state.present));
+
+    case "descend": {
+      const id = state.present.selectedId;
+      // Nothing selected: drop the cursor onto the first root.
+      if (!id) return transient(state, selectNext(state.present));
+
+      const children = getChildren(state.present.nodes, id);
+      // Has children: step into the folder by selecting its first child.
+      if (children.length > 0) {
+        return transient(state, { ...state.present, selectedId: children[0].id });
+      }
+      // Empty: create a first child under it and open it for renaming
+      // (same add+name-in-one-step semantics as the 'add' action).
+      const next = addNode(state.present, id);
+      const committed = commit(state, next);
+      return {
+        ...committed,
+        editingId: next.selectedId,
+        editIsNew: true,
+        editSnapshot: next,
+        editOriginalName: "",
+      };
+    }
+    case "ascend":
+      return transient(state, selectParent(state.present));
 
     case "add": {
       const selected = state.present.nodes.find(

@@ -10,6 +10,7 @@ import {
   reorderSibling,
   selectNext,
   selectPrev,
+  selectParent,
   getChildren,
   getDescendants,
   getVisualOrder,
@@ -270,5 +271,19 @@ describe("selectNext / selectPrev", () => {
   it("selectNext selects the first node when nothing is selected", () => {
     const state = sampleState(null);
     expect(selectNext(state).selectedId).toBe("root");
+  });
+});
+
+describe("selectParent", () => {
+  it("selects the parent of the selected node", () => {
+    expect(selectParent(sampleState("index")).selectedId).toBe("src");
+  });
+
+  it("keeps selection at the root level (root has no parent)", () => {
+    expect(selectParent(sampleState("root")).selectedId).toBe("root");
+  });
+
+  it("is a no-op when nothing is selected", () => {
+    expect(selectParent(sampleState(null)).selectedId).toBeNull();
   });
 });
