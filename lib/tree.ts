@@ -246,16 +246,31 @@ export function reorderSibling(
   };
 }
 
-/** Moves selection down one row in visual order. */
+/**
+ * Moves selection among siblings by `step` (-1 = up, +1 = down), wrapping
+ * around the ends of the current level. With nothing selected, picks the
+ * first root. Selection never leaves the current level.
+ */
+function selectSibling(state: TreeState, step: -1 | 1): TreeState {
+  const current = state.nodes.find((n) => n.id === state.selectedId);
+  if (!current) {
+    const roots = getChildren(state.nodes, null);
+    return roots.length ? { ...state, selectedId: roots[0].id } : state;
+  }
+  const siblings = getChildren(state.nodes, current.parentId);
+  const idx = siblings.findIndex((n) => n.id === current.id);
+  const nextIdx = (idx + step + siblings.length) % siblings.length;
+  return { ...state, selectedId: siblings[nextIdx].id };
+}
+
+/** Selects the next sibling at the current level, wrapping past the last. */
 export function selectNext(state: TreeState): TreeState {
-  const visual = getVisualOrder(state.nodes);
-  if (visual.length === 0) return state;
+  return selectSibling(state, 1);
+}
 
-  const idx = visual.findIndex((n) => n.id === state.selectedId);
-  if (idx === -1) return { ...state, selectedId: visual[0].id };
-
-  const nextIdx = Math.min(idx + 1, visual.length - 1);
-  return { ...state, selectedId: visual[nextIdx].id };
+/** Selects the previous sibling at the current level, wrapping past the first. */
+export function selectPrev(state: TreeState): TreeState {
+  return selectSibling(state, -1);
 }
 
 /** Selects the parent of the selected node. No-op at root or with no selection. */
@@ -264,16 +279,4 @@ export function selectParent(state: TreeState): TreeState {
   const node = state.nodes.find((n) => n.id === state.selectedId);
   if (!node || node.parentId === null) return state;
   return { ...state, selectedId: node.parentId };
-}
-
-/** Moves selection up one row in visual order. */
-export function selectPrev(state: TreeState): TreeState {
-  const visual = getVisualOrder(state.nodes);
-  if (visual.length === 0) return state;
-
-  const idx = visual.findIndex((n) => n.id === state.selectedId);
-  if (idx === -1) return { ...state, selectedId: visual[0].id };
-
-  const prevIdx = Math.max(idx - 1, 0);
-  return { ...state, selectedId: visual[prevIdx].id };
 }

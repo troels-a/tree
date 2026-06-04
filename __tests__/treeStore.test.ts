@@ -33,10 +33,34 @@ describe("selection is not undoable", () => {
     expect(s.past).toEqual([]);
   });
 
-  it("'selectNext' does not push history", () => {
-    const s = reducer(store(), { type: "selectNext" });
-    expect(s.present.selectedId).toBe("src");
+  it("'selectNext' moves among siblings without pushing history", () => {
+    const s = reducer(store("src"), { type: "selectNext" });
+    expect(s.present.selectedId).toBe("pkg"); // sibling, not the child "index"
     expect(s.past).toEqual([]);
+  });
+});
+
+describe("'add' creates a child inside the selected node", () => {
+  it("adds the new node as a child of the selected node (never a top-level sibling)", () => {
+    const s = reducer(store("root"), { type: "add" });
+    const newId = s.editingId!;
+    const child = s.present.nodes.find((n) => n.id === newId)!;
+    expect(child.parentId).toBe("root"); // inside root, not a sibling of root
+    // No new node ever ends up at the top level.
+    expect(getChildren(s.present.nodes, null)).toHaveLength(1);
+  });
+
+  it("adds a child of a non-root selected node too", () => {
+    const s = reducer(store("pkg"), { type: "add" });
+    const newId = s.editingId!;
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("pkg");
+  });
+
+  it("does nothing when no node is selected", () => {
+    const s = reducer(store(null), { type: "add" });
+    expect(s.present.nodes).toHaveLength(5);
+    expect(s.past).toHaveLength(0);
+    expect(s.editingId).toBeNull();
   });
 });
 
@@ -128,7 +152,7 @@ describe("rename history", () => {
 describe("add-then-name is one undo step", () => {
   it("undo after add+rename removes the new node entirely", () => {
     let s = store("pkg");
-    s = reducer(s, { type: "add" }); // new sibling after pkg, editing, isNew
+    s = reducer(s, { type: "add" }); // new child inside pkg, editing, isNew
     const newId = s.editingId!;
     expect(s.editIsNew).toBe(true);
     s = reducer(s, { type: "renameLive", id: newId, name: "LICENSE" });

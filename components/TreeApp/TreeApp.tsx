@@ -176,9 +176,9 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
         <p className={styles.description}>
           Build ASCII directory structures quickly.
           <br />
-          Navigate with arrow keys · Space to add · → to go inside · ← to go
-          back out · Delete to remove · Enter to rename · hold {moveModifier} +
-          ↑/↓ to move.
+          ↑/↓ to move within a level · → to go in · ← to go out · Space to add
+          inside · Delete to remove · Enter to rename · hold {moveModifier} +
+          ↑/↓ to reorder.
         </p>
       </header>
 

@@ -128,8 +128,11 @@ export function reducer(state: AppState, action: Action): AppState {
       const selected = state.present.nodes.find(
         (n) => n.id === state.present.selectedId
       );
-      const parentId = selected ? selected.parentId : null;
-      const next = addNode(state.present, parentId);
+      // Space always adds a child *inside* the selected node, so a top-level
+      // sibling can never be created. With nothing selected, there is no
+      // container to add to.
+      if (!selected) return state;
+      const next = addNode(state.present, selected.id);
       const committed = commit(state, next);
       return {
         ...committed,

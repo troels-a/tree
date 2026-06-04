@@ -55,9 +55,9 @@ describe("TreeApp", () => {
 
   it("removes the selected node when Delete is pressed", () => {
     render(<TreeApp />);
-    // root is selected by default; navigate down to the "index.ts" leaf
-    fireEvent.keyDown(getEditor(), { key: "ArrowDown" }); // src
-    fireEvent.keyDown(getEditor(), { key: "ArrowDown" }); // index.ts
+    // root is selected by default; descend into the "index.ts" leaf
+    fireEvent.keyDown(getEditor(), { key: "ArrowRight" }); // into root -> src
+    fireEvent.keyDown(getEditor(), { key: "ArrowRight" }); // into src -> index.ts
     expect(screen.getByText("index.ts")).toBeInTheDocument();
 
     fireEvent.keyDown(getEditor(), { key: "Delete" });
@@ -120,7 +120,7 @@ describe("TreeApp", () => {
   describe("move node with modifier + arrows", () => {
     it("Ctrl/Cmd+ArrowDown moves the selected node down among its siblings", () => {
       render(<TreeApp />);
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // select src
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // into root -> src
       fireEvent.keyDown(document.body, { key: "ArrowDown", ctrlKey: true }); // move src down
       const rows = getRows().map((r) => r.textContent ?? "");
       // order under root is now package.json, then src
@@ -147,8 +147,8 @@ describe("TreeApp", () => {
 
     it("ArrowRight on a childless node creates a child and opens it for editing", () => {
       render(<TreeApp />);
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts (leaf)
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // root -> src
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // src -> index.ts (leaf)
       const before = getRows().length;
 
       fireEvent.keyDown(document.body, { key: "ArrowRight" });
@@ -158,8 +158,8 @@ describe("TreeApp", () => {
 
     it("ArrowLeft selects the parent", () => {
       render(<TreeApp />);
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // root -> src
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // src -> index.ts
       fireEvent.keyDown(document.body, { key: "ArrowLeft" }); // back out to src
       const selected = screen.getByRole("treeitem", { selected: true });
       expect(selected.textContent).toContain("src");
@@ -169,8 +169,8 @@ describe("TreeApp", () => {
   describe("undo / redo", () => {
     it("undoes and redoes a removal via the keyboard", () => {
       render(<TreeApp />);
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
-      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // root -> src
+      fireEvent.keyDown(document.body, { key: "ArrowRight" }); // src -> index.ts
       fireEvent.keyDown(document.body, { key: "Delete" });
       expect(screen.queryByText("index.ts")).not.toBeInTheDocument();
 

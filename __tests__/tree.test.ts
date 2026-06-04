@@ -247,30 +247,40 @@ describe("reorderSibling", () => {
   });
 });
 
-describe("selectNext / selectPrev", () => {
-  it("selectNext moves selection down in visual order", () => {
-    const state = sampleState("src");
-    expect(selectNext(state).selectedId).toBe("index");
+describe("selectNext / selectPrev: move among siblings, wrapping", () => {
+  it("selectNext moves to the next sibling at the same level", () => {
+    expect(selectNext(sampleState("src")).selectedId).toBe("pkg");
   });
 
-  it("selectPrev moves selection up in visual order", () => {
-    const state = sampleState("index");
-    expect(selectPrev(state).selectedId).toBe("src");
+  it("selectPrev moves to the previous sibling at the same level", () => {
+    expect(selectPrev(sampleState("pkg")).selectedId).toBe("src");
   });
 
-  it("selectNext on the last node keeps it selected", () => {
-    const state = sampleState("readme");
-    expect(selectNext(state).selectedId).toBe("readme");
+  it("selectNext does NOT descend into a child's sub-level", () => {
+    // src -> pkg (sibling), never src -> index (child)
+    expect(selectNext(sampleState("src")).selectedId).toBe("pkg");
   });
 
-  it("selectPrev on the first node keeps it selected", () => {
-    const state = sampleState("root");
-    expect(selectPrev(state).selectedId).toBe("root");
+  it("selectNext wraps from the last sibling to the first", () => {
+    expect(selectNext(sampleState("readme")).selectedId).toBe("src");
   });
 
-  it("selectNext selects the first node when nothing is selected", () => {
-    const state = sampleState(null);
-    expect(selectNext(state).selectedId).toBe("root");
+  it("selectPrev wraps from the first sibling to the last", () => {
+    expect(selectPrev(sampleState("src")).selectedId).toBe("readme");
+  });
+
+  it("a lone child wraps to itself", () => {
+    expect(selectNext(sampleState("index")).selectedId).toBe("index");
+    expect(selectPrev(sampleState("index")).selectedId).toBe("index");
+  });
+
+  it("the single root wraps to itself", () => {
+    expect(selectNext(sampleState("root")).selectedId).toBe("root");
+  });
+
+  it("selects the first root when nothing is selected", () => {
+    expect(selectNext(sampleState(null)).selectedId).toBe("root");
+    expect(selectPrev(sampleState(null)).selectedId).toBe("root");
   });
 });
 
