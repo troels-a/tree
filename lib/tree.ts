@@ -206,7 +206,7 @@ export function indentNode(state: TreeState, id: NodeId): TreeState {
   return moveNode(state, id, prev.id, newOrder);
 }
 
-/** Moves the node up to its grandparent, just after its old parent (Shift+Tab). */
+/** Moves the node up to its grandparent, just above its old parent (Shift+Tab). */
 export function outdentNode(state: TreeState, id: NodeId): TreeState {
   const target = state.nodes.find((n) => n.id === id);
   if (!target || target.parentId === null) return state; // already at root
@@ -217,7 +217,7 @@ export function outdentNode(state: TreeState, id: NodeId): TreeState {
   // node, which isn't allowed — only one root may exist.
   if (parent.parentId === null) return state;
 
-  return moveNode(state, id, parent.parentId, parent.order + 1);
+  return moveNode(state, id, parent.parentId, parent.order);
 }
 
 /**
