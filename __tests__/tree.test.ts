@@ -11,6 +11,7 @@ import {
   selectNext,
   selectPrev,
   selectParent,
+  isFileName,
   getChildren,
   getDescendants,
   getVisualOrder,
@@ -271,6 +272,20 @@ describe("selectNext / selectPrev: traverse the whole tree in visual order", () 
   it("selects the first node when nothing is selected", () => {
     expect(selectNext(sampleState(null)).selectedId).toBe("root");
     expect(selectPrev(sampleState(null)).selectedId).toBe("root");
+  });
+});
+
+describe("isFileName: a dot in the name marks a file (vs a folder)", () => {
+  it("treats a dotted name as a file", () => {
+    expect(isFileName("index.ts")).toBe(true);
+    expect(isFileName("package.json")).toBe(true);
+    expect(isFileName(".gitignore")).toBe(true);
+  });
+
+  it("treats a dotless name as a folder", () => {
+    expect(isFileName("src")).toBe(false);
+    expect(isFileName("my-project")).toBe(false);
+    expect(isFileName("")).toBe(false);
   });
 });
 

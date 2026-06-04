@@ -11,6 +11,7 @@ import {
   selectNext,
   selectPrev,
   selectParent,
+  isFileName,
 } from "./tree";
 
 /**
@@ -37,7 +38,7 @@ export type Action =
   | { type: "selectPrev" }
   | { type: "ascend" }
   | { type: "add" }
-  | { type: "addSibling" }
+  | { type: "addContextual" }
   | { type: "remove" }
   | { type: "removeId"; id: NodeId }
   | { type: "indent" }
@@ -123,16 +124,16 @@ export function reducer(state: AppState, action: Action): AppState {
       return beginNewNode(state, selected.id);
     }
 
-    case "addSibling": {
-      // Space: create a sibling at the selected node's level. The root has no
-      // siblings (only one top-level node is allowed), so adding alongside the
-      // root falls back to creating a child inside it.
+    case "addContextual": {
+      // Space: a file (dotted name) gets a sibling beside it; a folder gets a
+      // child inside it. A sibling of the root would be a second top-level
+      // node, which isn't allowed, so that case falls back to a child.
       const selected = state.present.nodes.find(
         (n) => n.id === state.present.selectedId
       );
       if (!selected) return state;
-      const parentId =
-        selected.parentId === null ? selected.id : selected.parentId;
+      const addSibling = isFileName(selected.name) && selected.parentId !== null;
+      const parentId = addSibling ? selected.parentId : selected.id;
       return beginNewNode(state, parentId);
     }
 

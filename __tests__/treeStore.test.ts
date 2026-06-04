@@ -271,34 +271,54 @@ describe("move", () => {
   });
 });
 
-describe("addSibling (space): create a sibling at the current level", () => {
-  it("creates a sibling right after the selected node", () => {
-    const s = reducer(store("pkg"), { type: "addSibling" });
-    const newId = s.editingId!;
-    const node = s.present.nodes.find((n) => n.id === newId)!;
-    expect(node.parentId).toBe("root"); // same level as pkg
-    expect(s.editIsNew).toBe(true);
-    // inserted directly after pkg among root's children
-    const order = getChildren(s.present.nodes, "root").map((n) => n.id);
-    expect(order).toEqual(["src", "pkg", newId, "readme"]);
-  });
-
-  it("falls back to a child when the root is selected (no top-level siblings)", () => {
-    const s = reducer(store("root"), { type: "addSibling" });
+describe("addContextual (space): sibling on a file, child in a folder", () => {
+  it("creates a sibling when the selected node is a file (dotted name)", () => {
+    const s = reducer(store("pkg"), { type: "addContextual" }); // package.json
     const newId = s.editingId!;
     expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("root");
-    expect(getChildren(s.present.nodes, null)).toHaveLength(1); // still one root
+    // inserted directly after pkg among root's children
+    expect(getChildren(s.present.nodes, "root").map((n) => n.id)).toEqual([
+      "src",
+      "pkg",
+      newId,
+      "readme",
+    ]);
+  });
+
+  it("creates a child when the selected node is a folder (no dot)", () => {
+    const s = reducer(store("src"), { type: "addContextual" }); // src is a folder
+    const newId = s.editingId!;
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("src");
+    expect(s.editIsNew).toBe(true);
+  });
+
+  it("creates a child when the (folder) root is selected", () => {
+    const s = reducer(store("root"), { type: "addContextual" }); // my-project
+    const newId = s.editingId!;
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("root");
+  });
+
+  it("never makes a second top-level node, even if the root is a 'file'", () => {
+    const dottedRoot: TreeState = {
+      nodes: [{ id: "r", name: "my.project", parentId: null, order: 0 }],
+      selectedId: "r",
+    };
+    const s = reducer(initStore(dottedRoot), { type: "addContextual" });
+    const newId = s.editingId!;
+    // would-be sibling is top-level -> falls back to a child of the root
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("r");
+    expect(getChildren(s.present.nodes, null)).toHaveLength(1);
   });
 
   it("does nothing when no node is selected", () => {
-    const s = reducer(store(null), { type: "addSibling" });
+    const s = reducer(store(null), { type: "addContextual" });
     expect(s.present.nodes).toHaveLength(5);
     expect(s.past).toHaveLength(0);
     expect(s.editingId).toBeNull();
   });
 
   it("add-then-abort leaves no trace", () => {
-    let s = reducer(store("pkg"), { type: "addSibling" });
+    let s = reducer(store("pkg"), { type: "addContextual" });
     s = reducer(s, { type: "cancelEdit" });
     expect(s.present.nodes).toHaveLength(5);
     expect(s.past).toHaveLength(0);

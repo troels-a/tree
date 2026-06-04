@@ -23,6 +23,15 @@ export interface TreeState {
 
 export const DEFAULT_NODE_NAME = "untitled";
 
+/**
+ * A node is treated as a file when its name contains a dot, and as a folder
+ * otherwise. This drives whether Space adds a sibling (files) or a child
+ * (folders).
+ */
+export function isFileName(name: string): boolean {
+  return name.includes(".");
+}
+
 /** Returns direct children of `parentId`, sorted by their order field. */
 export function getChildren(
   nodes: TreeNode[],

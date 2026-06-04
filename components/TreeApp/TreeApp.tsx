@@ -136,7 +136,7 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
           break;
         case " ":
           e.preventDefault();
-          dispatch({ type: "addSibling" });
+          dispatch({ type: "addContextual" });
           break;
         case "Delete":
         case "Backspace":
@@ -176,9 +176,9 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
         <p className={styles.description}>
           Build ASCII directory structures quickly.
           <br />
-          ↑/↓ to move through the tree · → to add a child · Space to add a
-          sibling · ← to go out · Delete to remove · Enter to rename · hold{" "}
-          {moveModifier} + ↑/↓ to reorder.
+          ↑/↓ to move through the tree · → to add a child · Space to add
+          (beside a file, inside a folder) · ← to go out · Delete to remove ·
+          Enter to rename · hold {moveModifier} + ↑/↓ to reorder.
         </p>
       </header>
 
