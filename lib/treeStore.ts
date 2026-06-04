@@ -7,11 +7,11 @@ import {
   outdentNode,
   renameNode,
   moveNode,
-  reorderSibling,
+  moveVertical,
   selectNext,
   selectPrev,
   selectParent,
-  isFileName,
+  selectFirstChild,
 } from "./tree";
 
 /**
@@ -36,8 +36,10 @@ export type Action =
   | { type: "select"; id: NodeId | null }
   | { type: "selectNext" }
   | { type: "selectPrev" }
+  | { type: "descend" }
   | { type: "ascend" }
-  | { type: "addContextual" }
+  | { type: "addSibling" }
+  | { type: "addChild" }
   | { type: "clear" }
   | { type: "remove" }
   | { type: "removeId"; id: NodeId }
@@ -112,20 +114,31 @@ export function reducer(state: AppState, action: Action): AppState {
     case "selectPrev":
       return transient(state, selectPrev(state.present));
 
+    case "descend":
+      return transient(state, selectFirstChild(state.present));
     case "ascend":
       return transient(state, selectParent(state.present));
 
-    case "addContextual": {
-      // Space: a file (dotted name) gets a sibling beside it; a folder gets a
-      // child inside it. A sibling of the root would be a second top-level
-      // node, which isn't allowed, so that case falls back to a child.
+    case "addSibling": {
+      // Space: create a sibling at the selected node's level. The root has no
+      // siblings (only one top-level node is allowed), so adding alongside the
+      // root falls back to creating a child inside it.
       const selected = state.present.nodes.find(
         (n) => n.id === state.present.selectedId
       );
       if (!selected) return state;
-      const addSibling = isFileName(selected.name) && selected.parentId !== null;
-      const parentId = addSibling ? selected.parentId : selected.id;
+      const parentId =
+        selected.parentId === null ? selected.id : selected.parentId;
       return beginNewNode(state, parentId);
+    }
+
+    case "addChild": {
+      // Modifier + Space: create a child inside the selected node.
+      const selected = state.present.nodes.find(
+        (n) => n.id === state.present.selectedId
+      );
+      if (!selected) return state;
+      return beginNewNode(state, selected.id);
     }
 
     case "clear": {
@@ -153,10 +166,10 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case "moveUp":
       if (!state.present.selectedId) return state;
-      return commit(state, reorderSibling(state.present, state.present.selectedId, -1));
+      return commit(state, moveVertical(state.present, state.present.selectedId, -1));
     case "moveDown":
       if (!state.present.selectedId) return state;
-      return commit(state, reorderSibling(state.present, state.present.selectedId, 1));
+      return commit(state, moveVertical(state.present, state.present.selectedId, 1));
 
     case "move":
       return commit(

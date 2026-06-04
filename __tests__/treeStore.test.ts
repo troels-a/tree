@@ -41,9 +41,9 @@ describe("selection is not undoable", () => {
 });
 
 describe("structural ops are undoable", () => {
-  it("'addContextual' pushes history and undo restores the prior tree", () => {
+  it("'addSibling' pushes history and undo restores the prior tree", () => {
     const s0 = store();
-    const s1 = reducer(s0, { type: "addContextual" });
+    const s1 = reducer(s0, { type: "addSibling" });
     expect(s1.present.nodes.length).toBe(6);
     expect(s1.past).toHaveLength(1);
 
@@ -128,7 +128,7 @@ describe("rename history", () => {
 describe("add-then-name is one undo step", () => {
   it("undo after add+rename removes the new node entirely", () => {
     let s = store("pkg");
-    s = reducer(s, { type: "addContextual" }); // new node, editing, isNew
+    s = reducer(s, { type: "addSibling" }); // new node, editing, isNew
     const newId = s.editingId!;
     expect(s.editIsNew).toBe(true);
     s = reducer(s, { type: "renameLive", id: newId, name: "LICENSE" });
@@ -142,7 +142,7 @@ describe("add-then-name is one undo step", () => {
 
   it("aborting a brand-new empty node leaves no trace and no dangling undo", () => {
     let s = store("pkg");
-    s = reducer(s, { type: "addContextual" });
+    s = reducer(s, { type: "addSibling" });
     const newId = s.editingId!;
     s = reducer(s, { type: "cancelEdit" }); // empty -> abort
     expect(s.present.nodes.find((n) => n.id === newId)).toBeUndefined();
@@ -192,8 +192,8 @@ describe("the root cannot be deleted, only renamed", () => {
   });
 });
 
-describe("moveUp / moveDown reorder the selected node", () => {
-  it("'moveDown' moves the selected node past its next sibling and is undoable", () => {
+describe("moveUp / moveDown move the node through the tree", () => {
+  it("'moveDown' moves the selected node down a row and is undoable", () => {
     let s = reducer(store("src"), { type: "moveDown" });
     expect(getChildren(s.present.nodes, "root").map((n) => n.id)).toEqual([
       "pkg",
@@ -209,17 +209,17 @@ describe("moveUp / moveDown reorder the selected node", () => {
     ]);
   });
 
-  it("'moveUp' moves the selected node above its previous sibling", () => {
+  it("'moveUp' steps into the row above, even across levels", () => {
     const s = reducer(store("pkg"), { type: "moveUp" });
-    expect(getChildren(s.present.nodes, "root").map((n) => n.id)).toEqual([
+    // row above package.json is index.ts inside src, so it lands there
+    expect(getChildren(s.present.nodes, "src").map((n) => n.id)).toEqual([
       "pkg",
-      "src",
-      "readme",
+      "index",
     ]);
   });
 
-  it("a no-op reorder records no history", () => {
-    const s = reducer(store("src"), { type: "moveUp" }); // src is already first
+  it("records no history at the top edge", () => {
+    const s = reducer(store("src"), { type: "moveUp" }); // src is just under root
     expect(s.past).toHaveLength(0);
   });
 
@@ -247,12 +247,11 @@ describe("move", () => {
   });
 });
 
-describe("addContextual (space): sibling on a file, child in a folder", () => {
-  it("creates a sibling when the selected node is a file (dotted name)", () => {
-    const s = reducer(store("pkg"), { type: "addContextual" }); // package.json
+describe("addSibling (space): create a sibling at the current level", () => {
+  it("creates a sibling right after the selected node", () => {
+    const s = reducer(store("pkg"), { type: "addSibling" });
     const newId = s.editingId!;
     expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("root");
-    // inserted directly after pkg among root's children
     expect(getChildren(s.present.nodes, "root").map((n) => n.id)).toEqual([
       "src",
       "pkg",
@@ -261,49 +260,55 @@ describe("addContextual (space): sibling on a file, child in a folder", () => {
     ]);
   });
 
-  it("creates a child at the top when the selected node is a folder (no dot)", () => {
-    const s = reducer(store("src"), { type: "addContextual" }); // src has "index"
+  it("falls back to a child when the root is selected (no top-level siblings)", () => {
+    const s = reducer(store("root"), { type: "addSibling" });
+    const newId = s.editingId!;
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("root");
+    expect(getChildren(s.present.nodes, null)).toHaveLength(1);
+  });
+
+  it("does nothing when no node is selected", () => {
+    const s = reducer(store(null), { type: "addSibling" });
+    expect(s.present.nodes).toHaveLength(5);
+    expect(s.past).toHaveLength(0);
+  });
+});
+
+describe("addChild (modifier+space): create a child inside the node", () => {
+  it("creates a child at the top of the selected node's children", () => {
+    const s = reducer(store("src"), { type: "addChild" }); // src has "index"
     const newId = s.editingId!;
     expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("src");
     expect(s.editIsNew).toBe(true);
-    // new child sits above the existing one
     expect(getChildren(s.present.nodes, "src").map((n) => n.id)).toEqual([
       newId,
       "index",
     ]);
   });
 
-  it("creates a child when the (folder) root is selected", () => {
-    const s = reducer(store("root"), { type: "addContextual" }); // my-project
+  it("nests under a file too (no dot heuristic any more)", () => {
+    const s = reducer(store("pkg"), { type: "addChild" }); // package.json
     const newId = s.editingId!;
-    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("root");
-  });
-
-  it("never makes a second top-level node, even if the root is a 'file'", () => {
-    const dottedRoot: TreeState = {
-      nodes: [{ id: "r", name: "my.project", parentId: null, order: 0 }],
-      selectedId: "r",
-    };
-    const s = reducer(initStore(dottedRoot), { type: "addContextual" });
-    const newId = s.editingId!;
-    // would-be sibling is top-level -> falls back to a child of the root
-    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("r");
-    expect(getChildren(s.present.nodes, null)).toHaveLength(1);
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("pkg");
   });
 
   it("does nothing when no node is selected", () => {
-    const s = reducer(store(null), { type: "addContextual" });
+    const s = reducer(store(null), { type: "addChild" });
     expect(s.present.nodes).toHaveLength(5);
     expect(s.past).toHaveLength(0);
-    expect(s.editingId).toBeNull();
+  });
+});
+
+describe("descend (right arrow): go into the first child", () => {
+  it("selects the first child of the selected node", () => {
+    const s = reducer(store("src"), { type: "descend" });
+    expect(s.present.selectedId).toBe("index");
+    expect(s.past).toHaveLength(0); // navigation only
   });
 
-  it("add-then-abort leaves no trace", () => {
-    let s = reducer(store("pkg"), { type: "addContextual" });
-    s = reducer(s, { type: "cancelEdit" });
-    expect(s.present.nodes).toHaveLength(5);
-    expect(s.past).toHaveLength(0);
-    expect(s.editingId).toBeNull();
+  it("is a no-op on a leaf", () => {
+    const s = reducer(store("index"), { type: "descend" });
+    expect(s.present.selectedId).toBe("index");
   });
 });
 
@@ -350,7 +355,7 @@ describe("clear: wipe the tree back to an empty root", () => {
 
 describe("load resets history", () => {
   it("'load' installs a fresh tree with empty history", () => {
-    let s = reducer(store(), { type: "addContextual" });
+    let s = reducer(store(), { type: "addSibling" });
     s = reducer(s, { type: "load", tree: sampleTree("src") });
     expect(s.past).toEqual([]);
     expect(s.future).toEqual([]);

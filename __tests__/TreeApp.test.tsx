@@ -154,12 +154,23 @@ describe("TreeApp", () => {
       expect(selected.textContent).toContain("index.ts");
     });
 
-    it("ArrowRight no longer creates a node", () => {
-      render(<TreeApp />); // root selected
+    it("ArrowRight goes into the first child", () => {
+      render(<TreeApp />); // root selected, first child is src
       const before = getRows().length;
       fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(getRows().length).toBe(before); // nothing added
+      expect(getRows().length).toBe(before); // navigation only, nothing added
       expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("treeitem", { selected: true }).textContent
+      ).toContain("src");
+    });
+
+    it("modifier + Space creates a child (nests)", () => {
+      render(<TreeApp />); // root selected
+      const before = getRows().length;
+      fireEvent.keyDown(document.body, { key: " ", metaKey: true });
+      expect(getRows().length).toBe(before + 1);
+      expect(screen.getByRole("textbox")).toBeInTheDocument(); // editing the new node
     });
 
     it("ArrowLeft selects the parent", () => {

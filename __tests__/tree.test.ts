@@ -7,11 +7,11 @@ import {
   indentNode,
   outdentNode,
   renameNode,
-  reorderSibling,
+  moveVertical,
   selectNext,
   selectPrev,
   selectParent,
-  isFileName,
+  selectFirstChild,
   getChildren,
   getDescendants,
   getVisualOrder,
@@ -220,38 +220,54 @@ describe("moveNode", () => {
   });
 });
 
-describe("reorderSibling", () => {
-  it("moves a node up among its siblings", () => {
-    const next = reorderSibling(sampleState(), "pkg", -1);
+describe("moveVertical: move a node one row up/down the whole tree", () => {
+  // visual order: my-project, src, index.ts, package.json, README.md
+  it("moves a node down one row among siblings", () => {
+    const next = moveVertical(sampleState("pkg"), "pkg", 1);
+    // package.json drops below README.md (the next row)
     expect(getChildren(next.nodes, "root").map((n) => n.id)).toEqual([
+      "src",
+      "readme",
       "pkg",
+    ]);
+  });
+
+  it("moving up dives into a previous sibling folder (the row above)", () => {
+    const next = moveVertical(sampleState("pkg"), "pkg", -1);
+    // the row above package.json is index.ts (inside src), so it lands there
+    expect(getChildren(next.nodes, "src").map((n) => n.id)).toEqual([
+      "pkg",
+      "index",
+    ]);
+    expect(getChildren(next.nodes, "root").map((n) => n.id)).toEqual([
       "src",
       "readme",
     ]);
   });
 
-  it("moves a node down among its siblings", () => {
-    const next = reorderSibling(sampleState(), "src", 1);
+  it("carries the node's whole subtree", () => {
+    const next = moveVertical(sampleState("src"), "src", 1); // src has index
     expect(getChildren(next.nodes, "root").map((n) => n.id)).toEqual([
       "pkg",
       "src",
       "readme",
     ]);
-  });
-
-  it("is a no-op at the top of its sibling list", () => {
-    const state = sampleState();
-    expect(reorderSibling(state, "src", -1)).toBe(state);
-  });
-
-  it("is a no-op at the bottom of its sibling list", () => {
-    const state = sampleState();
-    expect(reorderSibling(state, "readme", 1)).toBe(state);
-  });
-
-  it("does not disturb other branches", () => {
-    const next = reorderSibling(sampleState(), "pkg", -1);
     expect(getChildren(next.nodes, "src").map((n) => n.id)).toEqual(["index"]);
+  });
+
+  it("is a no-op at the very top (just under the root)", () => {
+    const state = sampleState("src");
+    expect(moveVertical(state, "src", -1)).toBe(state);
+  });
+
+  it("is a no-op at the very bottom", () => {
+    const state = sampleState("readme");
+    expect(moveVertical(state, "readme", 1)).toBe(state);
+  });
+
+  it("does not move the root", () => {
+    const state = sampleState("root");
+    expect(moveVertical(state, "root", 1)).toBe(state);
   });
 });
 
@@ -282,17 +298,18 @@ describe("selectNext / selectPrev: traverse the whole tree in visual order", () 
   });
 });
 
-describe("isFileName: a dot in the name marks a file (vs a folder)", () => {
-  it("treats a dotted name as a file", () => {
-    expect(isFileName("index.ts")).toBe(true);
-    expect(isFileName("package.json")).toBe(true);
-    expect(isFileName(".gitignore")).toBe(true);
+describe("selectFirstChild: go into a node", () => {
+  it("selects the first child of the selected node", () => {
+    expect(selectFirstChild(sampleState("src")).selectedId).toBe("index");
+    expect(selectFirstChild(sampleState("root")).selectedId).toBe("src");
   });
 
-  it("treats a dotless name as a folder", () => {
-    expect(isFileName("src")).toBe(false);
-    expect(isFileName("my-project")).toBe(false);
-    expect(isFileName("")).toBe(false);
+  it("is a no-op on a leaf with no children", () => {
+    expect(selectFirstChild(sampleState("index")).selectedId).toBe("index");
+  });
+
+  it("is a no-op when nothing is selected", () => {
+    expect(selectFirstChild(sampleState(null)).selectedId).toBeNull();
   });
 });
 

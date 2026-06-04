@@ -23,15 +23,6 @@ export interface TreeState {
 
 export const DEFAULT_NODE_NAME = "untitled";
 
-/**
- * A node is treated as a file when its name contains a dot, and as a folder
- * otherwise. This drives whether Space adds a sibling (files) or a child
- * (folders).
- */
-export function isFileName(name: string): boolean {
-  return name.includes(".");
-}
-
 /** Returns direct children of `parentId`, sorted by their order field. */
 export function getChildren(
   nodes: TreeNode[],
@@ -227,31 +218,49 @@ export function outdentNode(state: TreeState, id: NodeId): TreeState {
 }
 
 /**
- * Reorders a node among its siblings by swapping positions with the neighbour
- * in `direction` (-1 = up, +1 = down). No-op at the ends of the sibling list.
+ * Moves a node one row up (`dir` = -1) or down (`dir` = +1) in the tree's
+ * visual order, carrying its whole subtree and re-homing it wherever that row
+ * lands — including into a sibling folder. No-op at the very top/bottom and
+ * for the root (which must stay at the top).
+ *
+ * The node is re-inserted immediately after an "anchor" node: the row that
+ * should sit just above it after the move. Placing immediately after the
+ * anchor means becoming its first child if it has any children, otherwise its
+ * next sibling.
  */
-export function reorderSibling(
+export function moveVertical(
   state: TreeState,
   id: NodeId,
-  direction: -1 | 1
+  dir: -1 | 1
 ): TreeState {
   const node = state.nodes.find((n) => n.id === id);
-  if (!node) return state;
+  if (!node || node.parentId === null) return state; // the root never moves
 
-  const siblings = getChildren(state.nodes, node.parentId);
-  const idx = siblings.findIndex((n) => n.id === id);
-  const swapIdx = idx + direction;
-  if (swapIdx < 0 || swapIdx >= siblings.length) return state;
+  const subtree = new Set<NodeId>([
+    id,
+    ...getDescendants(state.nodes, id).map((n) => n.id),
+  ]);
+  const visual = getVisualOrder(state.nodes);
+  const external = visual.filter((n) => !subtree.has(n.id));
 
-  const other = siblings[swapIdx];
-  return {
-    ...state,
-    nodes: state.nodes.map((n) => {
-      if (n.id === node.id) return { ...n, order: other.order };
-      if (n.id === other.id) return { ...n, order: node.order };
-      return n;
-    }),
-  };
+  // How many external rows precede the node (its slot in the external order).
+  let pos = 0;
+  for (const n of visual) {
+    if (n.id === id) break;
+    if (!subtree.has(n.id)) pos++;
+  }
+
+  // Up: sit after the row two slots back. Down: sit after the current next row.
+  const anchorIdx = dir === -1 ? pos - 2 : pos;
+  if (anchorIdx < 0 || anchorIdx >= external.length) return state; // at an end
+
+  const anchor = external[anchorIdx];
+  const anchorChildren = getChildren(state.nodes, anchor.id).filter(
+    (n) => !subtree.has(n.id)
+  );
+  return anchorChildren.length > 0
+    ? moveNode(state, id, anchor.id, 0) // dive in as first child
+    : moveNode(state, id, anchor.parentId, anchor.order + 1); // next sibling
 }
 
 /** Moves selection down one row in visual order, clamping at the last node. */
@@ -276,6 +285,14 @@ export function selectPrev(state: TreeState): TreeState {
 
   const prevIdx = Math.max(idx - 1, 0);
   return { ...state, selectedId: visual[prevIdx].id };
+}
+
+/** Selects the first child of the selected node. No-op on a leaf or with no selection. */
+export function selectFirstChild(state: TreeState): TreeState {
+  if (state.selectedId === null) return state;
+  const children = getChildren(state.nodes, state.selectedId);
+  if (children.length === 0) return state;
+  return { ...state, selectedId: children[0].id };
 }
 
 /** Selects the parent of the selected node. No-op at root or with no selection. */
