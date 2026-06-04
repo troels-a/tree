@@ -1,0 +1,11 @@
+.editor {
+  outline: none;
+  font-family: var(--font-tree);
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.editor:focus-visible {
+  /* keep focus subtle — the selected row already signals focus */
+  outline: none;
+}

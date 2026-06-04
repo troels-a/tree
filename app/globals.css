@@ -1,0 +1,36 @@
+:root {
+  --color-bg: #fff;
+  --color-text: #111;
+  --color-muted: #888;
+  --color-border: #ddd;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* The rendered tree uses Andale Mono per the design, falling back to the
+     UI mono stack where it is unavailable. */
+  --font-tree: "Andale Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 22px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+}

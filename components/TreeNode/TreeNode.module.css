@@ -1,0 +1,53 @@
+.row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  line-height: 22px;
+  cursor: default;
+  user-select: none;
+  white-space: pre;
+}
+
+.row:hover {
+  background: #f5f5f5;
+}
+
+.selected,
+.selected:hover {
+  background: #eaeaea;
+}
+
+.prefix {
+  color: #bbb;
+  white-space: pre;
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slash {
+  color: #111;
+}
+
+.empty {
+  color: #bbb;
+  font-style: italic;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-bottom: 1px solid #111;
+}
