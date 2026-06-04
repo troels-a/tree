@@ -184,6 +184,16 @@ export default function TreeApp({ logoSrc = "/logo.png" }: TreeAppProps) {
       <div className={styles.actions}>
         <CopyButton copied={copied} onCopy={handleCopy} />
       </div>
+
+      <a
+        className={styles.footer}
+        href="https://continuous.supply"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span className={styles.continuousMark} aria-hidden="true" />A
+        Continuous product
+      </a>
     </main>
   );
 }
