@@ -143,6 +143,29 @@ describe("TreeApp", () => {
       const after = getRows().map((r) => r.textContent ?? "");
       expect(after).toEqual(before); // structure unchanged
     });
+
+    it("Shift+ArrowRight indents the node under the sibling above it", () => {
+      render(<TreeApp />);
+      // select package.json (has a previous sibling, src)
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // package.json
+      fireEvent.keyDown(document.body, { key: "ArrowRight", shiftKey: true });
+      // package.json is now nested inside src
+      const rows = getRows().map((r) => r.textContent ?? "");
+      expect(rows.find((r) => r.includes("package.json"))).toContain("│");
+    });
+
+    it("Shift+ArrowLeft outdents a deep node one level", () => {
+      render(<TreeApp />);
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // src
+      fireEvent.keyDown(document.body, { key: "ArrowDown" }); // index.ts (depth 2)
+      fireEvent.keyDown(document.body, { key: "ArrowLeft", shiftKey: true });
+      // index.ts moves out of src up to the root level
+      const rows = getRows().map((r) => r.textContent ?? "");
+      const idxRow = rows.find((r) => r.includes("index.ts"))!;
+      expect(idxRow).not.toContain("│"); // no longer nested under src
+    });
   });
 
   describe("arrow-key create and navigate", () => {

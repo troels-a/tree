@@ -213,6 +213,9 @@ export function outdentNode(state: TreeState, id: NodeId): TreeState {
 
   const parent = state.nodes.find((n) => n.id === target.parentId);
   if (!parent) return state;
+  // Outdenting a direct child of the root would make it a second top-level
+  // node, which isn't allowed — only one root may exist.
+  if (parent.parentId === null) return state;
 
   return moveNode(state, id, parent.parentId, parent.order + 1);
 }

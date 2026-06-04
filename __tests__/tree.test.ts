@@ -187,11 +187,10 @@ describe("outdentNode", () => {
     ]);
   });
 
-  it("promotes a depth-1 node to the root level", () => {
+  it("does not promote a depth-1 node to the root (no second top-level node)", () => {
     const state = sampleState();
-    // outdent "src" -> its grandparent is null (root level)
-    const next = outdentNode(state, "src");
-    expect(next.nodes.find((n) => n.id === "src")!.parentId).toBeNull();
+    // outdenting "src" would make it a top-level sibling of root -> not allowed
+    expect(outdentNode(state, "src")).toBe(state);
   });
 
   it("does nothing for a node already at the root level", () => {

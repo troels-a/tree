@@ -30,8 +30,9 @@ my-project/
 | `⇧Space` | Add a child |
 | `Enter` | Rename the selected node |
 | `Delete` / `Backspace` | Remove the selected node (the root is protected) |
-| `Tab` / `⇧Tab` | Indent / outdent |
-| hold `⇧` + `↑`/`↓` | Move the selected node up/down the whole tree |
+| hold `⇧` + `↑`/`↓` | Move the node up/down the whole tree |
+| hold `⇧` + `→`/`←` | Nest the node deeper / pop it out a level |
+| `Tab` / `⇧Tab` | Indent / outdent (same as `⇧→` / `⇧←`) |
 | `⌘`/`Ctrl` + `C` | Copy the rendered tree |
 | `⌘`/`Ctrl` + `Z` / `⇧Z` | Undo / redo |
 
