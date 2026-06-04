@@ -11,7 +11,6 @@ import {
   selectNext,
   selectPrev,
   selectParent,
-  getChildren,
 } from "./tree";
 
 /**
@@ -36,9 +35,9 @@ export type Action =
   | { type: "select"; id: NodeId | null }
   | { type: "selectNext" }
   | { type: "selectPrev" }
-  | { type: "descend" }
   | { type: "ascend" }
   | { type: "add" }
+  | { type: "addSibling" }
   | { type: "remove" }
   | { type: "removeId"; id: NodeId }
   | { type: "indent" }
@@ -87,6 +86,19 @@ function transient(state: AppState, next: TreeState): AppState {
   return { ...state, present: next };
 }
 
+/** Creates a new node under `parentId` and opens it in a fresh rename session. */
+function beginNewNode(state: AppState, parentId: NodeId | null): AppState {
+  const next = addNode(state.present, parentId);
+  const committed = commit(state, next);
+  return {
+    ...committed,
+    editingId: next.selectedId,
+    editIsNew: true,
+    editSnapshot: next,
+    editOriginalName: "",
+  };
+}
+
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "load":
@@ -99,48 +111,29 @@ export function reducer(state: AppState, action: Action): AppState {
     case "selectPrev":
       return transient(state, selectPrev(state.present));
 
-    case "descend": {
-      const id = state.present.selectedId;
-      // Nothing selected: drop the cursor onto the first root.
-      if (!id) return transient(state, selectNext(state.present));
-
-      const children = getChildren(state.present.nodes, id);
-      // Has children: step into the folder by selecting its first child.
-      if (children.length > 0) {
-        return transient(state, { ...state.present, selectedId: children[0].id });
-      }
-      // Empty: create a first child under it and open it for renaming
-      // (same add+name-in-one-step semantics as the 'add' action).
-      const next = addNode(state.present, id);
-      const committed = commit(state, next);
-      return {
-        ...committed,
-        editingId: next.selectedId,
-        editIsNew: true,
-        editSnapshot: next,
-        editOriginalName: "",
-      };
-    }
     case "ascend":
       return transient(state, selectParent(state.present));
 
     case "add": {
+      // Right arrow: create a new child *inside* the selected node.
       const selected = state.present.nodes.find(
         (n) => n.id === state.present.selectedId
       );
-      // Space always adds a child *inside* the selected node, so a top-level
-      // sibling can never be created. With nothing selected, there is no
-      // container to add to.
       if (!selected) return state;
-      const next = addNode(state.present, selected.id);
-      const committed = commit(state, next);
-      return {
-        ...committed,
-        editingId: next.selectedId,
-        editIsNew: true,
-        editSnapshot: next,
-        editOriginalName: "",
-      };
+      return beginNewNode(state, selected.id);
+    }
+
+    case "addSibling": {
+      // Space: create a sibling at the selected node's level. The root has no
+      // siblings (only one top-level node is allowed), so adding alongside the
+      // root falls back to creating a child inside it.
+      const selected = state.present.nodes.find(
+        (n) => n.id === state.present.selectedId
+      );
+      if (!selected) return state;
+      const parentId =
+        selected.parentId === null ? selected.id : selected.parentId;
+      return beginNewNode(state, parentId);
     }
 
     case "remove":

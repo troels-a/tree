@@ -33,14 +33,14 @@ describe("selection is not undoable", () => {
     expect(s.past).toEqual([]);
   });
 
-  it("'selectNext' moves among siblings without pushing history", () => {
+  it("'selectNext' traverses into subnodes without pushing history", () => {
     const s = reducer(store("src"), { type: "selectNext" });
-    expect(s.present.selectedId).toBe("pkg"); // sibling, not the child "index"
+    expect(s.present.selectedId).toBe("index"); // descends into src's child
     expect(s.past).toEqual([]);
   });
 });
 
-describe("'add' creates a child inside the selected node", () => {
+describe("'add' (right arrow) creates a child inside the selected node", () => {
   it("adds the new node as a child of the selected node (never a top-level sibling)", () => {
     const s = reducer(store("root"), { type: "add" });
     const newId = s.editingId!;
@@ -271,38 +271,38 @@ describe("move", () => {
   });
 });
 
-describe("descend (right arrow): go into a node", () => {
-  it("selects the first child when the node has children", () => {
-    const s = reducer(store("root"), { type: "descend" });
-    expect(s.present.selectedId).toBe("src");
-    expect(s.past).toHaveLength(0); // navigation only, not undoable
+describe("addSibling (space): create a sibling at the current level", () => {
+  it("creates a sibling right after the selected node", () => {
+    const s = reducer(store("pkg"), { type: "addSibling" });
+    const newId = s.editingId!;
+    const node = s.present.nodes.find((n) => n.id === newId)!;
+    expect(node.parentId).toBe("root"); // same level as pkg
+    expect(s.editIsNew).toBe(true);
+    // inserted directly after pkg among root's children
+    const order = getChildren(s.present.nodes, "root").map((n) => n.id);
+    expect(order).toEqual(["src", "pkg", newId, "readme"]);
+  });
+
+  it("falls back to a child when the root is selected (no top-level siblings)", () => {
+    const s = reducer(store("root"), { type: "addSibling" });
+    const newId = s.editingId!;
+    expect(s.present.nodes.find((n) => n.id === newId)!.parentId).toBe("root");
+    expect(getChildren(s.present.nodes, null)).toHaveLength(1); // still one root
+  });
+
+  it("does nothing when no node is selected", () => {
+    const s = reducer(store(null), { type: "addSibling" });
+    expect(s.present.nodes).toHaveLength(5);
+    expect(s.past).toHaveLength(0);
     expect(s.editingId).toBeNull();
   });
 
-  it("creates and edits a first child when the node is empty", () => {
-    const s = reducer(store("readme"), { type: "descend" }); // readme has no children
-    const newId = s.editingId!;
-    expect(newId).not.toBeNull();
-    expect(s.editIsNew).toBe(true);
-    const child = s.present.nodes.find((n) => n.id === newId)!;
-    expect(child.parentId).toBe("readme");
-    expect(s.present.selectedId).toBe(newId);
-    expect(s.past).toHaveLength(1); // add boundary
-  });
-
-  it("descend-create then abort leaves no trace", () => {
-    let s = reducer(store("readme"), { type: "descend" });
+  it("add-then-abort leaves no trace", () => {
+    let s = reducer(store("pkg"), { type: "addSibling" });
     s = reducer(s, { type: "cancelEdit" });
     expect(s.present.nodes).toHaveLength(5);
     expect(s.past).toHaveLength(0);
     expect(s.editingId).toBeNull();
-    expect(getChildren(s.present.nodes, "readme")).toHaveLength(0);
-  });
-
-  it("selects the first root when nothing is selected", () => {
-    const s = reducer(store(null), { type: "descend" });
-    expect(s.present.selectedId).toBe("root");
-    expect(s.past).toHaveLength(0);
   });
 });
 
